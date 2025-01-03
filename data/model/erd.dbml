@@ -1,0 +1,180 @@
+Table genders {
+    id SMALLSERIAL [pk]
+    name VARCHAR(10) [unique, not null]
+}
+
+Table continents {
+    id SERIAL [pk]
+    name VARCHAR(50) [unique, not null]
+    code CHAR(3) [unique, not null]
+}
+
+Table countries {
+    id SERIAL [pk]
+    name VARCHAR(50) [not null]
+    code CHAR(2)
+    continent_id INTEGER [ref: > continents.id, on delete: cascade, on update: cascade]
+    indexes {
+        (name, code) [unique]
+    }
+}
+
+Table cities {
+    id SERIAL [pk]
+    name VARCHAR(50) [not null]
+    country_id INTEGER [ref: > countries.id, on delete: cascade, on update: cascade]
+    indexes {
+        (name, country_id) [unique]
+    }
+}
+
+Table passengers {
+    id SERIAL [pk]
+    first_name VARCHAR(50) [not null]
+    last_name VARCHAR(50) [not null]
+    gender_id SMALLINT [ref: > genders.id, on delete: cascade, on update: cascade]
+    birth_date DATE [not null]
+    country_id INTEGER [ref: > countries.id, on delete: cascade, on update: cascade]
+    Note: "CHECK (birth_date <= current_date)"
+}
+
+Table airports {
+    id SERIAL [pk]
+    name VARCHAR(255) [not null]
+    city_id INTEGER [ref: > cities.id, on delete: cascade, on update: cascade]
+    iata CHAR(3)
+    icao CHAR(4)
+    latitude REAL [not null]
+    longitude REAL [not null]
+    altitude REAL [not null]
+    utc REAL
+    dst_id SMALLINT [ref: > dst.id, on delete: cascade, on update: cascade]
+    timezone_id INTEGER [ref: > timezones.id, on delete: cascade, on update: cascade]
+    indexes {
+        (iata, icao) [unique]
+    }
+    Note: "CHECK (latitude BETWEEN -90 AND 90)"
+    Note: "CHECK (longitude BETWEEN -180 AND 180)"
+}
+
+Table dst {
+    id SMALLSERIAL [pk]
+    name CHAR(1) [unique, not null]
+    Note: "CHECK (name IN ('E', 'A', 'S', 'O', 'Z', 'N', 'U'))"
+}
+
+Table timezones {
+    id SERIAL [pk]
+    value VARCHAR(50) [unique, not null]
+}
+
+Table flights {
+    id SERIAL [pk]
+    aircraft_id INTEGER [ref: > aircrafts.id, on delete: cascade, on update: cascade]
+    origin INTEGER [ref: > airports.id, on delete: cascade, on update: cascade]
+    destination INTEGER [ref: > airports.id, on delete: cascade, on update: cascade]
+    departure_date_time TIMESTAMP [not null]
+    scheduled_date_time TIMESTAMP [not null]
+    flight_number CHAR(7) [unique, not null]
+    Note: "CHECK (departure_date_time <= scheduled_date_time)"
+}
+
+Table aircraft_seating {
+    id SERIAL [pk]
+    aircraft_id INTEGER [ref: > aircrafts.id, on delete: cascade, on update: cascade]
+    seat_number INTEGER [not null]
+    seat_letter CHAR(1) [not null]
+    travel_class SMALLINT [ref: > travel_classes.id, on delete: cascade, on update: cascade]
+    indexes {
+        (aircraft_id, seat_number, seat_letter) [unique]
+    }
+}
+
+Table aircrew {
+    id SERIAL [pk]
+    flight_id INTEGER [ref: > flights.id, on delete: cascade, on update: cascade]
+    role_id INTEGER [ref: > roles.id, on delete: cascade, on update: cascade]
+    employee_id INTEGER [ref: > employees.id, on delete: cascade, on update: cascade]
+    indexes {
+        (flight_id, employee_id) [unique]
+    }
+}
+
+Table employees {
+    id SERIAL [pk]
+    first_name VARCHAR(50)
+    last_name VARCHAR(50)
+    gender_id SMALLINT [ref: > genders.id, on delete: cascade, on update: cascade]
+    birth_date DATE [not null]
+    country_id INTEGER [ref: > countries.id, on delete: cascade, on update: cascade]
+    hire_date DATE [default: 'current_date']
+    is_active BOOLEAN [default: true]
+    Note: "CHECK (birth_date <= current_date)"
+}
+
+Table roles {
+    id SERIAL [pk]
+    name VARCHAR(50) [not null]
+    description VARCHAR(255)
+}
+
+Table aircrafts {
+    id SERIAL [pk]
+    name VARCHAR(50) [not null]
+    length_mm INTEGER
+    wingspan_mm INTEGER
+    max_speed_kmh INTEGER
+    range_km INTEGER
+    manufacturer INTEGER [ref: > manufacturers.id, on delete: cascade, on update: cascade]
+    tail_number VARCHAR(10) [unique, not null]
+    Note: "CHECK (length_mm > 0)"
+    Note: "CHECK (wingspan_mm > 0)"
+    Note: "CHECK (max_speed_kmh > 0)"
+    Note: "CHECK (range_km > 0)"
+    Note: "CHECK (tail_number ~ '^[A-Z]{2}-[A-Z0-9]{3,4}$')"
+}
+
+Table manufacturers {
+    id SERIAL [pk]
+    name VARCHAR(50) [unique, not null]
+}
+
+Table travel_classes {
+    id SMALLSERIAL [pk]
+    name VARCHAR(50) [unique, not null]
+}
+
+Table statuses {
+    id SERIAL [pk]
+    name VARCHAR(50) [unique, not null]
+}
+
+Table flight_seating {
+    id SERIAL [pk]
+    flight_id INTEGER [ref: > flights.id, on delete: cascade, on update: cascade]
+    aircraft_seating INTEGER [ref: > aircraft_seating.id, on delete: cascade, on update: cascade]
+    passenger INTEGER [ref: > passengers.id, on delete: cascade, on update: cascade]
+}
+
+Table flight_status_history {
+    id SERIAL [pk]
+    flight_id INTEGER [ref: > flights.id, on delete: cascade, on update: cascade]
+    status_id INTEGER [ref: > statuses.id, on delete: cascade, on update: cascade]
+    created_at TIMESTAMP [default: 'current_timestamp']
+    ended_at TIMESTAMP
+    changed_by INTEGER [ref: > employees.id, on delete: cascade, on update: cascade]
+    remarks VARCHAR(255)
+}
+
+Table flight_connections {
+    id SERIAL [pk]
+    flight_id INTEGER [ref: > flights.id, on delete: cascade, on update: cascade]
+    connection_order SMALLINT
+    layover_duration INTERVAL
+    arrival_time TIMESTAMP
+    departure_time TIMESTAMP
+    indexes {
+        (flight_id, connection_order) [unique]
+    }
+    Note: "CHECK (arrival_time <= departure_time)"
+}

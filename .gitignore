@@ -31,3 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Datasets ###
+
+# Airline csv | Source: https://www.kaggle.com/datasets/iamsouravbanerjee/airline-dataset
+data/datasets/Airline.csv
+# Airports csv | Source: https://www.kaggle.com/datasets/thoudamyoihenba/airports
+data/datasets/Airports.csv
