@@ -112,14 +112,14 @@ CREATE TABLE roles (
     description VARCHAR(255)
 );
 
-CREATE TABLE aircrafts (
+CREATE TABLE aircraft (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(50) NOT NULL,
+    name VARCHAR(50) UNIQUE NOT NULL,
     length_mm INTEGER,
     wingspan_mm INTEGER,
     max_speed_kmh INTEGER,
     range_km INTEGER,
-    manufacturer INTEGER NOT NULL,
+    manufacturer_id INTEGER NOT NULL,
     tail_number VARCHAR(10) UNIQUE NOT NULL,
     CHECK (length_mm > 0),
     CHECK (wingspan_mm > 0),
@@ -186,12 +186,12 @@ ALTER TABLE airports
     ADD CONSTRAINT airports_timezone_fk FOREIGN KEY (timezone_id) REFERENCES timezones(id) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE flights
-    ADD CONSTRAINT flights_aircraft_fk FOREIGN KEY (aircraft_id) REFERENCES aircrafts(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    ADD CONSTRAINT flights_aircraft_fk FOREIGN KEY (aircraft_id) REFERENCES aircraft(id) ON DELETE CASCADE ON UPDATE CASCADE,
     ADD CONSTRAINT flights_origin_fk FOREIGN KEY (origin) REFERENCES airports(id) ON DELETE CASCADE ON UPDATE CASCADE,
     ADD CONSTRAINT flights_destination_fk FOREIGN KEY (destination) REFERENCES airports(id) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE aircraft_seating
-    ADD CONSTRAINT aircraft_seating_aircraft_fk FOREIGN KEY (aircraft_id) REFERENCES aircrafts(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    ADD CONSTRAINT aircraft_seating_aircraft_fk FOREIGN KEY (aircraft_id) REFERENCES aircraft(id) ON DELETE CASCADE ON UPDATE CASCADE,
     ADD CONSTRAINT aircraft_seating_travel_class_fk FOREIGN KEY (travel_class) REFERENCES travel_classes(id) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE aircrew
@@ -203,8 +203,8 @@ ALTER TABLE employees
     ADD CONSTRAINT employees_gender_id_fk FOREIGN KEY (gender_id) REFERENCES genders(id) ON DELETE CASCADE ON UPDATE CASCADE,
     ADD CONSTRAINT employees_country_id_fk FOREIGN KEY (country_id) REFERENCES countries(id) ON DELETE CASCADE ON UPDATE CASCADE;
 
-ALTER TABLE aircrafts
-    ADD CONSTRAINT aircrafts_manufacturer_fk FOREIGN KEY (manufacturer) REFERENCES manufacturers(id) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE aircraft
+    ADD CONSTRAINT aircraft_manufacturer_fk FOREIGN KEY (manufacturer_id) REFERENCES manufacturers(id) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE flight_seating
     ADD CONSTRAINT flight_seating_flight_fk FOREIGN KEY (flight_id) REFERENCES flights(id) ON DELETE CASCADE ON UPDATE CASCADE,

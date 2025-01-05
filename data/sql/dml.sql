@@ -115,7 +115,7 @@ DROP TABLE temp_airlines;
 -- Hardcoded data
 INSERT INTO manufacturers (name) VALUES ('Boeing'), ('Airbus'), ('Embraer');
 
-INSERT INTO aircrafts (name, length_mm, wingspan_mm, max_speed_kmh, range_km, manufacturer, tail_number) VALUES
+INSERT INTO aircraft (name, length_mm, wingspan_mm, max_speed_kmh, range_km, manufacturer_id, tail_number) VALUES
 ('737 MAX 9A', 42160, 35900, 839, 6110, 1, 'LV-FUA'),
 ('737 MAX 9B', 39520, 35900, 839, 6480, 1, 'LV-FUB'),
 ('737 MAX 8', 39520, 35920, 842, 6570, 1, 'LV-FUC'),
