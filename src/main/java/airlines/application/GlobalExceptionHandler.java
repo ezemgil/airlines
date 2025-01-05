@@ -2,13 +2,15 @@ package airlines.application;
 
 import airlines.exceptions.InvalidSortFieldException;
 import airlines.exceptions.PageNotFoundException;
-import airlines.exceptions.AircraftNotFoundException;
-import airlines.exceptions.ManufacturerNotFoundException;
+import airlines.exceptions.notfounds.AircraftNotFoundException;
+import airlines.exceptions.notfounds.ManufacturerNotFoundException;
+import airlines.exceptions.duplicates.DuplicateAircraftException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -21,6 +23,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @RestControllerAdvice
 @ControllerAdvice
@@ -65,8 +68,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Object> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException ex) {
         Map<String, String> errors = new HashMap<>();
-        errors.put("Invalid value", ex.getValue().toString());
-        errors.put("requiredType", ex.getRequiredType().getSimpleName());
+        errors.put("Invalid value", Objects.requireNonNull(ex.getValue()).toString());
+        errors.put("requiredType", Objects.requireNonNull(ex.getRequiredType()).getSimpleName());
         errors.put("parameter", ex.getName());
         return ResponseHandler.generateResponse(ex.getMessage(), HttpStatus.BAD_REQUEST, errors);
     }
@@ -98,6 +101,10 @@ public class GlobalExceptionHandler {
     }
 
     // 409 Conflict
+    @ExceptionHandler(DuplicateAircraftException.class)
+    public ResponseEntity<Object> handleDuplicateAircraftException(DuplicateAircraftException ex) {
+        return ResponseHandler.generateResponse(ex.getMessage(), HttpStatus.CONFLICT, null);
+    }
 
     // 500 Internal Server Error
     @ExceptionHandler(DataAccessException.class)
@@ -108,5 +115,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleException(Exception ex) {
         return ResponseHandler.generateResponse(UNEXPECTED_ERROR, HttpStatus.INTERNAL_SERVER_ERROR, null);
+    }
+
+    @ExceptionHandler(JpaSystemException.class)
+    public ResponseEntity<Object> handleJpaSystemException(JpaSystemException ex) {
+        return ResponseHandler.generateResponse(DATABASE_ERROR, HttpStatus.INTERNAL_SERVER_ERROR, null);
     }
 }

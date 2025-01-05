@@ -1,4 +1,4 @@
-package airlines.exceptions;
+package airlines.exceptions.notfounds;
 
 public class AircraftNotFoundException extends RuntimeException {
     public AircraftNotFoundException(String message) {

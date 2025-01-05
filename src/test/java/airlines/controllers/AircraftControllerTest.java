@@ -6,6 +6,8 @@ import airlines.exceptions.PageNotFoundException;
 import airlines.services.interfaces.IAircraftService;
 import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -23,6 +25,10 @@ import static org.mockito.Mockito.*;
 
 class AircraftControllerTest {
 
+    private static final String GET_AIRCRAFT = "getAircraft";
+    private static final String GET_AIRCRAFT_BY_ID = "getAircraftById";
+    private static final String CREATE_AIRCRAFT = "createAircraft";
+
     @Mock
     private IAircraftService aircraftService;
 
@@ -34,146 +40,163 @@ class AircraftControllerTest {
         MockitoAnnotations.openMocks(this);
     }
 
-    @Test
-    void getAircraft_ReturnsOkResponse() {
-        // Arrange: Mock a valid response from the service
-        int page = 0, size = 10;
-        String sortBy = "id";
-        boolean ascending = true;
-        Page<AircraftDTO> mockPage = new PageImpl<>(List.of(new AircraftDTO()));
-        when(aircraftService.findAll(page, size, sortBy, ascending)).thenReturn(mockPage);
+    @Nested
+    class GetAircraftTests {
+        @Test @Tag(GET_AIRCRAFT)
+        void getAircraft_ReturnsOkResponse() {
+            int page = 0, size = 10;
+            String sortBy = "id";
+            boolean ascending = true;
+            Page<AircraftDTO> mockPage = new PageImpl<>(List.of(new AircraftDTO()));
+            when(aircraftService.findAll(page, size, sortBy, ascending)).thenReturn(mockPage);
+            ResponseEntity<Object> response = aircraftController.getAircraft(page, size, sortBy, ascending);
+            assertEquals(200, response.getStatusCodeValue());
+            assertEquals("Successfully retrieved aircraft", ((String) ((Map<?, ?>) response.getBody()).get("message")));
+            verify(aircraftService, times(1)).findAll(page, size, sortBy, ascending);
+        }
 
-        // Act: Call the controller method
-        ResponseEntity<Object> response = aircraftController.getAircraft(page, size, sortBy, ascending);
+        @Test @Tag(GET_AIRCRAFT)
+        void getAircraft_ReturnsEmptyList() {
+            int page = 0, size = 10;
+            String sortBy = "id";
+            boolean ascending = true;
+            Page<AircraftDTO> mockPage = new PageImpl<>(List.of());
+            when(aircraftService.findAll(page, size, sortBy, ascending)).thenReturn(mockPage);
+            ResponseEntity<Object> response = aircraftController.getAircraft(page, size, sortBy, ascending);
+            assertEquals(200, response.getStatusCodeValue());
+            assertEquals("Successfully retrieved aircraft", ((String) ((Map<?, ?>) response.getBody()).get("message")));
+            assertEquals(0, ((Page<?>) ((Map<?, ?>) response.getBody()).get("data")).getContent().size());
+            verify(aircraftService, times(1)).findAll(page, size, sortBy, ascending);
+        }
 
-        // Assert: Verify the response status and message
-        assertEquals(200, response.getStatusCodeValue());
-        assertEquals("Successfully retrieved aircraft", ((String) ((Map<?, ?>) response.getBody()).get("message")));
-        verify(aircraftService, times(1)).findAll(page, size, sortBy, ascending);
+        @Test @Tag(GET_AIRCRAFT)
+        void getAircraft_InvalidPage_ThrowsValidationException() {
+            int page = -1, size = 10;
+            String sortBy = "id";
+            boolean ascending = true;
+            doThrow(new ConstraintViolationException("getAircraft.page: must be greater than or equal to 0", null))
+                    .when(aircraftService).findAll(page, size, sortBy, ascending);
+            ConstraintViolationException exception = assertThrows(ConstraintViolationException.class, () ->
+                    aircraftController.getAircraft(page, size, sortBy, ascending));
+            assertEquals("getAircraft.page: must be greater than or equal to 0", exception.getMessage());
+        }
+
+        @Test @Tag(GET_AIRCRAFT)
+        void getAircraft_PageNotFound_ThrowsException() {
+            int page = 1000, size = 10;
+            String sortBy = "id";
+            boolean ascending = true;
+            when(aircraftService.findAll(page, size, sortBy, ascending))
+                    .thenThrow(new PageNotFoundException("No aircraft found on the requested page"));
+            assertThrows(PageNotFoundException.class, () ->
+                    aircraftController.getAircraft(page, size, sortBy, ascending)
+            );
+        }
+
+        @Test @Tag(GET_AIRCRAFT)
+        void getAircraft_UnexpectedError_ThrowsException() {
+            int page = 0, size = 10;
+            String sortBy = "id";
+            boolean ascending = true;
+            when(aircraftService.findAll(page, size, sortBy, ascending))
+                    .thenThrow(new RuntimeException("Unexpected error"));
+            Exception exception = assertThrows(RuntimeException.class, () ->
+                    aircraftController.getAircraft(page, size, sortBy, ascending));
+            assertEquals("Unexpected error", exception.getMessage());
+        }
     }
 
-    @Test
-    void getAircraft_ReturnsEmptyList() {
-        // Arrange: Mock an empty page
-        int page = 0, size = 10;
-        String sortBy = "id";
-        boolean ascending = true;
-        Page<AircraftDTO> mockPage = new PageImpl<>(List.of());
-        when(aircraftService.findAll(page, size, sortBy, ascending)).thenReturn(mockPage);
+    @Nested
+    class GetAircraftByIdTests {
+        @Test @Tag(GET_AIRCRAFT_BY_ID)
+        void getAircraftById_ReturnsOkResponse() {
+            int id = 1;
+            AircraftDTO mockAircraft = new AircraftDTO();
+            when(aircraftService.findById(id)).thenReturn(mockAircraft);
+            ResponseEntity<Object> response = aircraftController.getAircraftById(id);
+            assertEquals(200, response.getStatusCodeValue());
+            assertEquals("Successfully retrieved aircraft", ((String) ((Map<?, ?>) response.getBody()).get("message")));
+            verify(aircraftService, times(1)).findById(id);
+        }
 
-        // Act: Call the controller method
-        ResponseEntity<Object> response = aircraftController.getAircraft(page, size, sortBy, ascending);
+        @Test @Tag(GET_AIRCRAFT_BY_ID)
+        void getAircraftById_AircraftNotFound_ThrowsException() {
+            int id = 1;
+            when(aircraftService.findById(id))
+                    .thenThrow(new PageNotFoundException("Aircraft with id " + id + " not found"));
+            assertThrows(PageNotFoundException.class, () ->
+                    aircraftController.getAircraftById(id));
+        }
 
-        // Assert: Verify the empty list in the response
-        assertEquals(200, response.getStatusCodeValue());
-        assertEquals("Successfully retrieved aircraft", ((String) ((Map<?, ?>) response.getBody()).get("message")));
-        assertEquals(0, ((Page<?>) ((Map<?, ?>) response.getBody()).get("data")).getContent().size());
-        verify(aircraftService, times(1)).findAll(page, size, sortBy, ascending);
+        @Test @Tag(GET_AIRCRAFT_BY_ID)
+        void getAircraftById_UnexpectedError_ThrowsException() {
+            int id = 1;
+            when(aircraftService.findById(id))
+                    .thenThrow(new RuntimeException("Unexpected error"));
+            Exception exception = assertThrows(RuntimeException.class, () ->
+                    aircraftController.getAircraftById(id));
+            assertEquals("Unexpected error", exception.getMessage());
+        }
+
+        @Test @Tag(GET_AIRCRAFT_BY_ID)
+        void getAircraftById_InvalidId_ThrowsValidationException() {
+            int id = -1;
+            doThrow(new ConstraintViolationException("getAircraftById.id: must be greater than or equal to 0", null))
+                    .when(aircraftService).findById(id);
+            ConstraintViolationException exception = assertThrows(ConstraintViolationException.class, () ->
+                    aircraftController.getAircraftById(id));
+            assertEquals("getAircraftById.id: must be greater than or equal to 0", exception.getMessage());
+        }
     }
 
-    @Test
-    void getAircraft_InvalidPage_ThrowsValidationException() {
-        // Arrange: Set an invalid page number
-        int page = -1, size = 10;
-        String sortBy = "id";
-        boolean ascending = true;
+    @Nested
+    class CreateAircraftTests {
+        @Test @Tag(CREATE_AIRCRAFT)
+        void createAircraft_ReturnsOkResponse() {
+            AircraftDTO mockAircraft = new AircraftDTO();
+            when(aircraftService.save(mockAircraft)).thenReturn(mockAircraft);
+            ResponseEntity<Object> response = aircraftController.create(mockAircraft);
+            assertEquals(201, response.getStatusCodeValue());
+            assertEquals("Aircraft created successfully", ((String) ((Map<?, ?>) response.getBody()).get("message")));
+            verify(aircraftService, times(1)).save(mockAircraft);
+        }
 
-        // Mock the service to throw ConstraintViolationException
-        doThrow(new ConstraintViolationException("getAircraft.page: must be greater than or equal to 0", null))
-                .when(aircraftService).findAll(page, size, sortBy, ascending);
+        @Test @Tag(CREATE_AIRCRAFT)
+        void createAircraft_InvalidAircraft_ThrowsValidationException() {
+            AircraftDTO mockAircraft = new AircraftDTO();
+            doThrow(new ConstraintViolationException("createAircraft: invalid aircraft", null))
+                    .when(aircraftService).save(mockAircraft);
+            ConstraintViolationException exception = assertThrows(ConstraintViolationException.class, () ->
+                    aircraftController.create(mockAircraft));
+            assertEquals("createAircraft: invalid aircraft", exception.getMessage());
+        }
 
-        // Act & Assert: Expect a ConstraintViolationException
-        ConstraintViolationException exception = assertThrows(ConstraintViolationException.class, () ->
-                aircraftController.getAircraft(page, size, sortBy, ascending)
-        );
-        assertEquals("getAircraft.page: must be greater than or equal to 0", exception.getMessage());
-    }
+        @Test @Tag(CREATE_AIRCRAFT)
+        void createAircraft_UnexpectedError_ThrowsException() {
+            AircraftDTO mockAircraft = new AircraftDTO();
+            when(aircraftService.save(mockAircraft))
+                    .thenThrow(new RuntimeException("Unexpected error"));
+            Exception exception = assertThrows(RuntimeException.class, () ->
+                    aircraftController.create(mockAircraft));
+            assertEquals("Unexpected error", exception.getMessage());
+        }
 
+        @Test @Tag(CREATE_AIRCRAFT)
+        void createAircraft_NullAircraft_ThrowsException() {
+            when(aircraftService.save(null))
+                    .thenThrow(new IllegalArgumentException("Aircraft cannot be null"));
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                    aircraftController.create(null));
+            assertEquals("Aircraft cannot be null", exception.getMessage());
+        }
 
-    @Test
-    void getAircraft_PageNotFound_ThrowsException() {
-        // Arrange: Mock a PageNotFoundException
-        int page = 1000, size = 10;
-        String sortBy = "id";
-        boolean ascending = true;
-        when(aircraftService.findAll(page, size, sortBy, ascending))
-                .thenThrow(new PageNotFoundException("No aircraft found on the requested page"));
-
-        // Act & Assert: Expect a PageNotFoundException
-        assertThrows(PageNotFoundException.class, () ->
-                aircraftController.getAircraft(page, size, sortBy, ascending)
-        );
-    }
-
-    @Test
-    void getAircraft_UnexpectedError_ThrowsException() {
-        // Arrange: Mock a RuntimeException
-        int page = 0, size = 10;
-        String sortBy = "id";
-        boolean ascending = true;
-        when(aircraftService.findAll(page, size, sortBy, ascending))
-                .thenThrow(new RuntimeException("Unexpected error"));
-
-        // Act & Assert: Expect a RuntimeException
-        Exception exception = assertThrows(RuntimeException.class, () ->
-                aircraftController.getAircraft(page, size, sortBy, ascending)
-        );
-        assertEquals("Unexpected error", exception.getMessage());
-    }
-
-    @Test
-    void getAircraftById_ReturnsOkResponse() {
-        // Arrange: Mock a valid response from the service
-        int id = 1;
-        AircraftDTO mockAircraft = new AircraftDTO();
-        when(aircraftService.findById(id)).thenReturn(mockAircraft);
-
-        // Act: Call the controller method
-        ResponseEntity<Object> response = aircraftController.getAircraftById(id);
-
-        // Assert: Verify the response status and message
-        assertEquals(200, response.getStatusCodeValue());
-        assertEquals("Successfully retrieved aircraft", ((String) ((Map<?, ?>) response.getBody()).get("message")));
-        verify(aircraftService, times(1)).findById(id);
-    }
-
-    @Test
-    void getAircraftById_AircraftNotFound_ThrowsException() {
-        // Arrange: Mock an AircraftNotFoundException
-        int id = 1;
-        when(aircraftService.findById(id))
-                .thenThrow(new PageNotFoundException("Aircraft with id " + id + " not found"));
-
-        // Act & Assert: Expect a PageNotFoundException
-        assertThrows(PageNotFoundException.class, () ->
-                aircraftController.getAircraftById(id));
-    }
-
-    @Test
-    void getAircraftById_UnexpectedError_ThrowsException() {
-        // Arrange: Mock a RuntimeException
-        int id = 1;
-        when(aircraftService.findById(id))
-                .thenThrow(new RuntimeException("Unexpected error"));
-
-        // Act & Assert: Expect a RuntimeException
-        Exception exception = assertThrows(RuntimeException.class, () ->
-                aircraftController.getAircraftById(id));
-        assertEquals("Unexpected error", exception.getMessage());
-    }
-
-    @Test
-    void getAircraftById_InvalidId_ThrowsValidationException() {
-        // Arrange: Set an invalid id
-        int id = -1;
-
-        // Mock the service to throw ConstraintViolationException
-        doThrow(new ConstraintViolationException("getAircraftById.id: must be greater than or equal to 0", null))
-                .when(aircraftService).findById(id);
-
-        // Act & Assert: Expect
-        ConstraintViolationException exception = assertThrows(ConstraintViolationException.class, () ->
-                aircraftController.getAircraftById(id));
-        assertEquals("getAircraftById.id: must be greater than or equal to 0", exception.getMessage());
+        @Test @Tag(CREATE_AIRCRAFT)
+        void createAircraft_EmptyAircraft_ThrowsException() {
+            when(aircraftService.save(new AircraftDTO()))
+                    .thenThrow(new IllegalArgumentException("Aircraft cannot be empty"));
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                    aircraftController.create(new AircraftDTO()));
+            assertEquals("Aircraft cannot be empty", exception.getMessage());
+        }
     }
 }

@@ -114,7 +114,7 @@ CREATE TABLE roles (
 
 CREATE TABLE aircraft (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(50) NOT NULL,
     length_mm INTEGER,
     wingspan_mm INTEGER,
     max_speed_kmh INTEGER,

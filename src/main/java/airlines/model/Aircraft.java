@@ -11,7 +11,6 @@ import org.hibernate.annotations.Checks;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor @NoArgsConstructor
 @Table(name = "aircraft", uniqueConstraints = {
-        @UniqueConstraint(columnNames = "name"),
         @UniqueConstraint(columnNames = "tail_number")
 })
 @Checks({
@@ -22,7 +21,7 @@ import org.hibernate.annotations.Checks;
         @Check(constraints = "tail_number ~ '^[A-Z]{2}-[A-Z0-9]{3,4}$'")
 })
 public class Aircraft {
-    @Id
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
 
     @Column(name = "name", nullable = false)
@@ -44,7 +43,7 @@ public class Aircraft {
     @Column(name = "tail_number")
     String tailNumber;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.MERGE)
     @JoinColumn(name = "manufacturer_id", nullable = false)
     Manufacturer manufacturer;
 }

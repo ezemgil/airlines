@@ -14,7 +14,7 @@ import lombok.experimental.FieldDefaults;
         @UniqueConstraint(columnNames = "name")
 })
 public class Manufacturer {
-    @Id
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
 
     @Column(name = "name", nullable = false)

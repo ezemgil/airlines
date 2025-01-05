@@ -40,4 +40,11 @@ public class AircraftController {
         AircraftDTO aircraft = aircraftService.findById(id);
         return ResponseHandler.generateResponse(message, HttpStatus.OK, aircraft);
     }
+
+    @PostMapping
+    public ResponseEntity<Object> create(@Valid @RequestBody AircraftDTO aircraftDTO) {
+        String message = "Aircraft created successfully";
+        AircraftDTO aircraft = aircraftService.save(aircraftDTO);
+        return ResponseHandler.generateResponse(message, HttpStatus.CREATED, aircraft);
+    }
 }
