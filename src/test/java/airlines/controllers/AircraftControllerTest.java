@@ -120,4 +120,60 @@ class AircraftControllerTest {
         );
         assertEquals("Unexpected error", exception.getMessage());
     }
+
+    @Test
+    void getAircraftById_ReturnsOkResponse() {
+        // Arrange: Mock a valid response from the service
+        int id = 1;
+        AircraftDTO mockAircraft = new AircraftDTO();
+        when(aircraftService.findById(id)).thenReturn(mockAircraft);
+
+        // Act: Call the controller method
+        ResponseEntity<Object> response = aircraftController.getAircraftById(id);
+
+        // Assert: Verify the response status and message
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals("Successfully retrieved aircraft", ((String) ((Map<?, ?>) response.getBody()).get("message")));
+        verify(aircraftService, times(1)).findById(id);
+    }
+
+    @Test
+    void getAircraftById_AircraftNotFound_ThrowsException() {
+        // Arrange: Mock an AircraftNotFoundException
+        int id = 1;
+        when(aircraftService.findById(id))
+                .thenThrow(new PageNotFoundException("Aircraft with id " + id + " not found"));
+
+        // Act & Assert: Expect a PageNotFoundException
+        assertThrows(PageNotFoundException.class, () ->
+                aircraftController.getAircraftById(id));
+    }
+
+    @Test
+    void getAircraftById_UnexpectedError_ThrowsException() {
+        // Arrange: Mock a RuntimeException
+        int id = 1;
+        when(aircraftService.findById(id))
+                .thenThrow(new RuntimeException("Unexpected error"));
+
+        // Act & Assert: Expect a RuntimeException
+        Exception exception = assertThrows(RuntimeException.class, () ->
+                aircraftController.getAircraftById(id));
+        assertEquals("Unexpected error", exception.getMessage());
+    }
+
+    @Test
+    void getAircraftById_InvalidId_ThrowsValidationException() {
+        // Arrange: Set an invalid id
+        int id = -1;
+
+        // Mock the service to throw ConstraintViolationException
+        doThrow(new ConstraintViolationException("getAircraftById.id: must be greater than or equal to 0", null))
+                .when(aircraftService).findById(id);
+
+        // Act & Assert: Expect
+        ConstraintViolationException exception = assertThrows(ConstraintViolationException.class, () ->
+                aircraftController.getAircraftById(id));
+        assertEquals("getAircraftById.id: must be greater than or equal to 0", exception.getMessage());
+    }
 }

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -88,6 +89,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ManufacturerNotFoundException.class)
     public ResponseEntity<Object> handleManufacturerNotFoundException(ManufacturerNotFoundException ex) {
+        return ResponseHandler.generateResponse(ex.getMessage(), HttpStatus.NOT_FOUND, null);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Object> handleNoResourceFoundException(NoResourceFoundException ex) {
         return ResponseHandler.generateResponse(ex.getMessage(), HttpStatus.NOT_FOUND, null);
     }
 

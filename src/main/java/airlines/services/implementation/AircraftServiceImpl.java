@@ -2,6 +2,7 @@ package airlines.services.implementation;
 
 import airlines.dto.AircraftDTO;
 import airlines.dto.mapper.IAircraftMapper;
+import airlines.exceptions.AircraftNotFoundException;
 import airlines.exceptions.PageNotFoundException;
 import airlines.repository.IAircraftRepository;
 import airlines.services.interfaces.IAircraftService;
@@ -26,5 +27,12 @@ public class AircraftServiceImpl implements IAircraftService {
             throw new PageNotFoundException("No aircraft found on the requested page");
         }
         return aircraftPage;
+    }
+
+    @Override
+    public AircraftDTO findById(Integer id) {
+        return aircraftMapper.toDTO(aircraftRepository.findById(id).orElseThrow(
+                () -> new AircraftNotFoundException("Aircraft with id " + id + " not found")
+        ));
     }
 }

@@ -5,4 +5,5 @@ import org.springframework.data.domain.Page;
 
 public interface IAircraftService {
     Page<AircraftDTO> findAll(int page, int size, String sortBy, boolean ascending);
+    AircraftDTO findById(Integer id);
 }
