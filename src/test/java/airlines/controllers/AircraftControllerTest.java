@@ -28,6 +28,7 @@ class AircraftControllerTest {
     private static final String GET_AIRCRAFT = "getAircraft";
     private static final String GET_AIRCRAFT_BY_ID = "getAircraftById";
     private static final String CREATE_AIRCRAFT = "createAircraft";
+    private static final String UPDATE_AIRCRAFT = "updateAircraft";
 
     @Mock
     private IAircraftService aircraftService;
@@ -196,6 +197,62 @@ class AircraftControllerTest {
                     .thenThrow(new IllegalArgumentException("Aircraft cannot be empty"));
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
                     aircraftController.create(new AircraftDTO()));
+            assertEquals("Aircraft cannot be empty", exception.getMessage());
+        }
+    }
+
+    @Nested
+    class UpdateAircraftTests{
+        @Test @Tag(UPDATE_AIRCRAFT)
+        void updateAircraft_ReturnsOkResponse() {
+            int id = 1;
+            AircraftDTO mockAircraft = new AircraftDTO();
+            when(aircraftService.update(id, mockAircraft)).thenReturn(mockAircraft);
+            ResponseEntity<Object> response = aircraftController.update(id, mockAircraft);
+            assertEquals(200, response.getStatusCodeValue());
+            assertEquals("Aircraft updated successfully", ((String) ((Map<?, ?>) response.getBody()).get("message")));
+            verify(aircraftService, times(1)).update(id, mockAircraft);
+        }
+
+        @Test @Tag(UPDATE_AIRCRAFT)
+        void updateAircraft_InvalidAircraft_ThrowsValidationException() {
+            int id = 1;
+            AircraftDTO mockAircraft = new AircraftDTO();
+            doThrow(new ConstraintViolationException("updateAircraft: invalid aircraft", null))
+                    .when(aircraftService).update(id, mockAircraft);
+            ConstraintViolationException exception = assertThrows(ConstraintViolationException.class, () ->
+                    aircraftController.update(id, mockAircraft));
+            assertEquals("updateAircraft: invalid aircraft", exception.getMessage());
+        }
+
+        @Test @Tag(UPDATE_AIRCRAFT)
+        void updateAircraft_UnexpectedError_ThrowsException() {
+            int id = 1;
+            AircraftDTO mockAircraft = new AircraftDTO();
+            when(aircraftService.update(id, mockAircraft))
+                    .thenThrow(new RuntimeException("Unexpected error"));
+            Exception exception = assertThrows(RuntimeException.class, () ->
+                    aircraftController.update(id, mockAircraft));
+            assertEquals("Unexpected error", exception.getMessage());
+        }
+
+        @Test @Tag(UPDATE_AIRCRAFT)
+        void updateAircraft_NullAircraft_ThrowsException() {
+            int id = 1;
+            when(aircraftService.update(id, null))
+                    .thenThrow(new IllegalArgumentException("Aircraft cannot be null"));
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                    aircraftController.update(id, null));
+            assertEquals("Aircraft cannot be null", exception.getMessage());
+        }
+
+        @Test @Tag(UPDATE_AIRCRAFT)
+        void updateAircraft_EmptyAircraft_ThrowsException() {
+            int id = 1;
+            when(aircraftService.update(id, new AircraftDTO()))
+                    .thenThrow(new IllegalArgumentException("Aircraft cannot be empty"));
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                    aircraftController.update(id, new AircraftDTO()));
             assertEquals("Aircraft cannot be empty", exception.getMessage());
         }
     }

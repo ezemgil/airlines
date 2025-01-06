@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface IAircraftRepository extends JpaRepository<Aircraft, Integer> {
-    boolean existsAircraftByTailNumber(String tailNumber);
+    boolean existsAircraftByTailNumberAndIdNot(String tailNumber, Integer id);
 }

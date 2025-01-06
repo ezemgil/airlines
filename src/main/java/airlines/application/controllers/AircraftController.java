@@ -47,4 +47,14 @@ public class AircraftController {
         AircraftDTO aircraft = aircraftService.save(aircraftDTO);
         return ResponseHandler.generateResponse(message, HttpStatus.CREATED, aircraft);
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Object> update(
+            @Valid @PathVariable Integer id,
+            @Valid @RequestBody AircraftDTO aircraftDTO
+    ) {
+        String message = "Aircraft updated successfully";
+        AircraftDTO aircraft = aircraftService.update(id, aircraftDTO);
+        return ResponseHandler.generateResponse(message, HttpStatus.OK, aircraft);
+    }
 }
