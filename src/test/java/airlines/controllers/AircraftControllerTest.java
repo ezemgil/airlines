@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -29,6 +30,7 @@ class AircraftControllerTest {
     private static final String GET_AIRCRAFT_BY_ID = "getAircraftById";
     private static final String CREATE_AIRCRAFT = "createAircraft";
     private static final String UPDATE_AIRCRAFT = "updateAircraft";
+    private static final String DELETE_AIRCRAFT = "deleteAircraft";
 
     @Mock
     private IAircraftService aircraftService;
@@ -51,8 +53,9 @@ class AircraftControllerTest {
             Page<AircraftDTO> mockPage = new PageImpl<>(List.of(new AircraftDTO()));
             when(aircraftService.findAll(page, size, sortBy, ascending)).thenReturn(mockPage);
             ResponseEntity<Object> response = aircraftController.getAircraft(page, size, sortBy, ascending);
-            assertEquals(200, response.getStatusCodeValue());
-            assertEquals("Successfully retrieved aircraft", ((String) ((Map<?, ?>) response.getBody()).get("message")));
+            assertEquals(200, response.getStatusCode().value());
+            assertEquals("Successfully retrieved aircraft", ((String) ((Map<?, ?>)
+                    Objects.requireNonNull(response.getBody())).get("message")));
             verify(aircraftService, times(1)).findAll(page, size, sortBy, ascending);
         }
 
@@ -64,8 +67,9 @@ class AircraftControllerTest {
             Page<AircraftDTO> mockPage = new PageImpl<>(List.of());
             when(aircraftService.findAll(page, size, sortBy, ascending)).thenReturn(mockPage);
             ResponseEntity<Object> response = aircraftController.getAircraft(page, size, sortBy, ascending);
-            assertEquals(200, response.getStatusCodeValue());
-            assertEquals("Successfully retrieved aircraft", ((String) ((Map<?, ?>) response.getBody()).get("message")));
+            assertEquals(200, response.getStatusCode().value());
+            assertEquals("Successfully retrieved aircraft", ((String) ((Map<?, ?>)
+                    Objects.requireNonNull(response.getBody())).get("message")));
             assertEquals(0, ((Page<?>) ((Map<?, ?>) response.getBody()).get("data")).getContent().size());
             verify(aircraftService, times(1)).findAll(page, size, sortBy, ascending);
         }
@@ -115,8 +119,9 @@ class AircraftControllerTest {
             AircraftDTO mockAircraft = new AircraftDTO();
             when(aircraftService.findById(id)).thenReturn(mockAircraft);
             ResponseEntity<Object> response = aircraftController.getAircraftById(id);
-            assertEquals(200, response.getStatusCodeValue());
-            assertEquals("Successfully retrieved aircraft", ((String) ((Map<?, ?>) response.getBody()).get("message")));
+            assertEquals(200, response.getStatusCode().value());
+            assertEquals("Successfully retrieved aircraft", ((String) ((Map<?, ?>)
+                    Objects.requireNonNull(response.getBody())).get("message")));
             verify(aircraftService, times(1)).findById(id);
         }
 
@@ -157,8 +162,9 @@ class AircraftControllerTest {
             AircraftDTO mockAircraft = new AircraftDTO();
             when(aircraftService.save(mockAircraft)).thenReturn(mockAircraft);
             ResponseEntity<Object> response = aircraftController.create(mockAircraft);
-            assertEquals(201, response.getStatusCodeValue());
-            assertEquals("Aircraft created successfully", ((String) ((Map<?, ?>) response.getBody()).get("message")));
+            assertEquals(201, response.getStatusCode().value());
+            assertEquals("Aircraft created successfully", ((String) ((Map<?, ?>)
+                    Objects.requireNonNull(response.getBody())).get("message")));
             verify(aircraftService, times(1)).save(mockAircraft);
         }
 
@@ -209,8 +215,9 @@ class AircraftControllerTest {
             AircraftDTO mockAircraft = new AircraftDTO();
             when(aircraftService.update(id, mockAircraft)).thenReturn(mockAircraft);
             ResponseEntity<Object> response = aircraftController.update(id, mockAircraft);
-            assertEquals(200, response.getStatusCodeValue());
-            assertEquals("Aircraft updated successfully", ((String) ((Map<?, ?>) response.getBody()).get("message")));
+            assertEquals(200, response.getStatusCode().value());
+            assertEquals("Aircraft updated successfully", ((String) ((Map<?, ?>)
+                    Objects.requireNonNull(response.getBody())).get("message")));
             verify(aircraftService, times(1)).update(id, mockAircraft);
         }
 
@@ -256,4 +263,37 @@ class AircraftControllerTest {
             assertEquals("Aircraft cannot be empty", exception.getMessage());
         }
     }
+
+    @Nested
+    class DeleteAircraftTests {
+        @Test @Tag(DELETE_AIRCRAFT)
+        void deleteAircraft_ReturnsOkResponse() {
+            int id = 1;
+            ResponseEntity<Object> response = aircraftController.delete(id);
+            assertEquals(200, response.getStatusCode().value());
+            assertEquals("Aircraft deleted successfully", ((String) ((Map<?, ?>)
+                    Objects.requireNonNull(response.getBody())).get("message")));
+            verify(aircraftService, times(1)).delete(id);
+        }
+
+        @Test @Tag(DELETE_AIRCRAFT)
+        void deleteAircraft_AircraftNotFound_ThrowsException() {
+            int id = 1;
+            doThrow(new PageNotFoundException("Aircraft with id " + id + " not found"))
+                    .when(aircraftService).delete(id);
+            assertThrows(PageNotFoundException.class, () ->
+                    aircraftController.delete(id));
+        }
+
+        @Test @Tag(DELETE_AIRCRAFT)
+        void deleteAircraft_InvalidId_ThrowsValidationException() {
+            int id = -1;
+            doThrow(new ConstraintViolationException("deleteAircraft.id: must be greater than or equal to 0", null))
+                    .when(aircraftService).delete(id);
+            ConstraintViolationException exception = assertThrows(ConstraintViolationException.class, () ->
+                    aircraftController.delete(id));
+            assertEquals("deleteAircraft.id: must be greater than or equal to 0", exception.getMessage());
+        }
+    }
+
 }

@@ -57,4 +57,13 @@ public class AircraftController {
         AircraftDTO aircraft = aircraftService.update(id, aircraftDTO);
         return ResponseHandler.generateResponse(message, HttpStatus.OK, aircraft);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Object> delete(
+            @Valid @PathVariable Integer id
+    ) {
+        String message = "Aircraft deleted successfully";
+        aircraftService.delete(id);
+        return ResponseHandler.generateResponse(message, HttpStatus.OK, null);
+    }
 }

@@ -58,6 +58,12 @@ public class AircraftServiceImpl implements IAircraftService {
         return aircraftMapper.toDTO(aircraftRepository.save(aircraft));
     }
 
+    @Override @Transactional
+    public void delete(Integer id) {
+        findById(id);
+        aircraftRepository.deleteById(id);
+    }
+
     /**
      * Validates if the aircraft is unique by tail number
      * @param id aircraft id (null if new aircraft)

@@ -8,4 +8,5 @@ public interface IAircraftService {
     AircraftDTO findById(Integer id);
     AircraftDTO save(AircraftDTO aircraftDTO);
     AircraftDTO update(Integer id, AircraftDTO aircraftDTO);
+    void delete(Integer id);
 }
