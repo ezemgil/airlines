@@ -49,7 +49,7 @@ CREATE TABLE airports (
     altitude REAL NOT NULL,
     utc REAL,
     dst_id SMALLINT,
-    timezone_id INTEGER,
+    timezone VARCHAR(50),
     CHECK (latitude BETWEEN -90 AND 90),
     CHECK (longitude BETWEEN -180 AND 180),
     UNIQUE (iata, icao)
@@ -59,11 +59,6 @@ CREATE TABLE dst (
     id SMALLSERIAL PRIMARY KEY,
     name CHAR(1) UNIQUE NOT NULL,
     CHECK (name IN ('E', 'A', 'S', 'O', 'Z', 'N', 'U'))
-);
-
-CREATE TABLE timezones (
-    id SERIAL PRIMARY KEY,
-    value VARCHAR(50) UNIQUE NOT NULL
 );
 
 CREATE TABLE flights (
@@ -182,8 +177,7 @@ ALTER TABLE passengers
 
 ALTER TABLE airports
     ADD CONSTRAINT airports_city_fk FOREIGN KEY (city_id) REFERENCES cities(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    ADD CONSTRAINT airports_dst_fk FOREIGN KEY (dst_id) REFERENCES dst(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    ADD CONSTRAINT airports_timezone_fk FOREIGN KEY (timezone_id) REFERENCES timezones(id) ON DELETE CASCADE ON UPDATE CASCADE;
+    ADD CONSTRAINT airports_dst_fk FOREIGN KEY (dst_id) REFERENCES dst(id) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE flights
     ADD CONSTRAINT flights_aircraft_fk FOREIGN KEY (aircraft_id) REFERENCES aircraft(id) ON DELETE CASCADE ON UPDATE CASCADE,

@@ -43,7 +43,6 @@ public class AircraftServiceImpl implements IAircraftService {
 
     @Override @Transactional
     public AircraftDTO save(AircraftDTO aircraftDTO) {
-        System.out.println(aircraftDTO);
         validateUniqueAircraft(null, aircraftDTO.getTailNumber());
         aircraftDTO.setManufacturer(manufacturerService.findById(aircraftDTO.getManufacturer().getId()));
         return aircraftMapper.toDTO(aircraftRepository.save(aircraftMapper.toEntity(aircraftDTO)));
