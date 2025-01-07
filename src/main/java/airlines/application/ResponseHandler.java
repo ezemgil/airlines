@@ -18,10 +18,9 @@ public class ResponseHandler {
         response.put("message", message);
         response.put("meta", meta);
 
-        if (status.is2xxSuccessful()) {
-            response.put("data", data);
-        } else {
-            response.put("errors", data);
+        if (data != null) {
+            String key = status.is2xxSuccessful() ? "data" : "errors";
+            response.put(key, data);
         }
 
         return new ResponseEntity<>(response, status);
