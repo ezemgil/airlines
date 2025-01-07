@@ -83,18 +83,32 @@ WHERE temp_airlines.gender != '\N';
 
 INSERT INTO cities (name, country_id)
 SELECT DISTINCT ports.city, c.id
-FROM temp_airports ports JOIN temp_airlines lines ON ports.country = lines.nationality
-                         JOIN countries c ON ports.country = c.name
-WHERE ports.city != '\N';
+FROM temp_airports ports
+         JOIN countries c ON ports.country = c.name
+WHERE ports.city IS NOT NULL
+  AND ports.country IS NOT NULL
+  AND ports.city != '\N'
+  AND c.id IS NOT NULL
+ON CONFLICT (name, country_id) DO NOTHING;
+
 
 
 INSERT INTO airports (name, city_id, iata, icao, latitude, longitude, altitude, utc, dst_id, timezone)
-SELECT DISTINCT ports.name, cities.id, NULLIF(ports.iata, '\N'), NULLIF(ports.icao, '\N'), ports.latitude::REAL, ports.longitude::REAL,
-                ports.altitude::REAL, NULLIF(ports.timezone, '\N')::REAL, dst.id, NULLIF(ports.tz, '\N')
+SELECT DISTINCT ON (ports.icao, cities.id)
+    ports.name, cities.id,
+    NULLIF(ports.iata, '\N'), NULLIF(ports.icao, '\N'),
+    ports.latitude::REAL, ports.longitude::REAL,
+    ports.altitude::REAL,
+    NULLIF(ports.timezone, '\N')::REAL, dst.id,
+    NULLIF(ports.tz, '\N')
 FROM temp_airports ports
          JOIN cities ON ports.city = cities.name
          JOIN dst ON ports.dst = dst.name
+WHERE ports.icao IS NOT NULL
+  AND cities.id IS NOT NULL
+  AND ports.city != '\N'
 ON CONFLICT DO NOTHING;
+
 
 INSERT INTO passengers (first_name, last_name, gender_id, birth_date, country_id)
 SELECT DISTINCT NULLIF(temp_airlines.first_name, '\N'), NULLIF(temp_airlines.last_name, '\N'), genders.id, (SELECT CURRENT_DATE - INTERVAL '1 year' * temp_airlines.age), countries.id

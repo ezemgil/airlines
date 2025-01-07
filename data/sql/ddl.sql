@@ -42,8 +42,8 @@ CREATE TABLE airports (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     city_id INTEGER NOT NULL,
-    iata CHAR(3),
-    icao CHAR(4),
+    iata CHAR(3) UNIQUE,
+    icao CHAR(4) UNIQUE,
     latitude REAL NOT NULL,
     longitude REAL NOT NULL,
     altitude REAL NOT NULL,
@@ -51,8 +51,7 @@ CREATE TABLE airports (
     dst_id SMALLINT,
     timezone VARCHAR(50),
     CHECK (latitude BETWEEN -90 AND 90),
-    CHECK (longitude BETWEEN -180 AND 180),
-    UNIQUE (iata, icao)
+    CHECK (longitude BETWEEN -180 AND 180)
 );
 
 CREATE TABLE dst (
