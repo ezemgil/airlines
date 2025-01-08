@@ -48,13 +48,13 @@ CREATE TABLE airports (
     longitude REAL NOT NULL,
     altitude REAL NOT NULL,
     utc REAL,
-    dst_id SMALLINT,
+    dst_offset_id SMALLINT,
     timezone VARCHAR(50),
     CHECK (latitude BETWEEN -90 AND 90),
     CHECK (longitude BETWEEN -180 AND 180)
 );
 
-CREATE TABLE dst (
+CREATE TABLE dst_offset (
     id SMALLSERIAL PRIMARY KEY,
     name CHAR(1) UNIQUE NOT NULL,
     CHECK (name IN ('E', 'A', 'S', 'O', 'Z', 'N', 'U'))
@@ -62,13 +62,14 @@ CREATE TABLE dst (
 
 CREATE TABLE flights (
     id SERIAL PRIMARY KEY,
-    aircraft_id INTEGER NOT NULL,
+    airplane_id INTEGER NOT NULL,
     origin INTEGER NOT NULL,
     destination INTEGER NOT NULL,
     departure_date_time TIMESTAMP NOT NULL,
     scheduled_date_time TIMESTAMP NOT NULL,
     flight_number CHAR(7) UNIQUE NOT NULL,
-    CHECK (departure_date_time <= scheduled_date_time)
+    CHECK (departure_date_time <= scheduled_date_time),
+    CHECK (origin <> destination)
 );
 
 CREATE TABLE aircraft_seating (
@@ -76,7 +77,7 @@ CREATE TABLE aircraft_seating (
     aircraft_id INTEGER NOT NULL,
     seat_number INTEGER NOT NULL,
     seat_letter CHAR(1) NOT NULL,
-    travel_class SMALLINT NOT NULL,
+    travel_class_id SMALLINT NOT NULL,
     UNIQUE (aircraft_id, seat_number, seat_letter)
 );
 
@@ -108,18 +109,24 @@ CREATE TABLE roles (
 
 CREATE TABLE aircraft (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(50) NOT NULL,
+    name VARCHAR(50) NOT NULL UNIQUE,
     length_mm INTEGER,
     wingspan_mm INTEGER,
     max_speed_kmh INTEGER,
     range_km INTEGER,
     manufacturer_id INTEGER NOT NULL,
-    tail_number VARCHAR(10) UNIQUE NOT NULL,
+    weight_kg NUMERIC NOT NULL,
+    height_m NUMERIC NOT NULL,
+    cruise_speed_kmh NUMERIC NOT NULL,
+    max_fuel_capacity_l NUMERIC NOT NULL,
     CHECK (length_mm > 0),
     CHECK (wingspan_mm > 0),
     CHECK (max_speed_kmh > 0),
     CHECK (range_km > 0),
-    CHECK (tail_number ~ '^[A-Z]{2}-[A-Z0-9]{3,4}$')
+    CHECK (weight_kg > 0),
+    CHECK (height_m > 0),
+    CHECK (cruise_speed_kmh > 0),
+    CHECK (max_fuel_capacity_l > 0)
 );
 
 CREATE TABLE manufacturers (
@@ -132,9 +139,16 @@ CREATE TABLE travel_classes (
     name VARCHAR(50) UNIQUE NOT NULL
 );
 
-CREATE TABLE statuses (
+CREATE TABLE statuses_scope (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) UNIQUE NOT NULL
+);
+
+CREATE TABLE statuses (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL,
+    scope_id INTEGER NOT NULL,
+    description VARCHAR(255)
 );
 
 CREATE TABLE flight_seating (
@@ -147,21 +161,21 @@ CREATE TABLE flight_seating (
 CREATE TABLE flight_status_history (
     id SERIAL PRIMARY KEY,
     flight_id INTEGER,
-    status_id INTEGER,
+    status_id INTEGER NOT NULL,
     created_at TIMESTAMP DEFAULT current_timestamp,
     ended_at TIMESTAMP,
-    changed_by INTEGER,
+    changed_by INTEGER NOT NULL,
     remarks VARCHAR(255)
 );
 
-CREATE TABLE flight_connections (
-    id SERIAL PRIMARY KEY,
-    flight_id INTEGER,
-    connection_order SMALLINT,
-    layover_duration INTERVAL,
-    arrival_time TIMESTAMP,
-    departure_time TIMESTAMP,
-    CONSTRAINT flight_connections_times_check CHECK (arrival_time <= departure_time)
+CREATE TABLE airplanes (
+                           id SERIAL PRIMARY KEY,
+                           aircraft_id INTEGER NOT NULL,
+                           registration_number VARCHAR(20) UNIQUE NOT NULL,
+                           in_service BOOLEAN DEFAULT TRUE,
+                           purchase_date DATE,
+                           CHECK (registration_number ~ '^[A-Z0-9-]+$'),
+                           CHECK (purchase_date <= current_date)
 );
 
 ALTER TABLE countries
@@ -176,16 +190,16 @@ ALTER TABLE passengers
 
 ALTER TABLE airports
     ADD CONSTRAINT airports_city_fk FOREIGN KEY (city_id) REFERENCES cities(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    ADD CONSTRAINT airports_dst_fk FOREIGN KEY (dst_id) REFERENCES dst(id) ON DELETE CASCADE ON UPDATE CASCADE;
+    ADD CONSTRAINT airports_dst_offset_fk FOREIGN KEY (dst_offset_id) REFERENCES dst_offset(id) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE flights
-    ADD CONSTRAINT flights_aircraft_fk FOREIGN KEY (aircraft_id) REFERENCES aircraft(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    ADD CONSTRAINT flights_airplane_fk FOREIGN KEY (airplane_id) REFERENCES airplanes(id) ON DELETE CASCADE ON UPDATE CASCADE,
     ADD CONSTRAINT flights_origin_fk FOREIGN KEY (origin) REFERENCES airports(id) ON DELETE CASCADE ON UPDATE CASCADE,
     ADD CONSTRAINT flights_destination_fk FOREIGN KEY (destination) REFERENCES airports(id) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE aircraft_seating
     ADD CONSTRAINT aircraft_seating_aircraft_fk FOREIGN KEY (aircraft_id) REFERENCES aircraft(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    ADD CONSTRAINT aircraft_seating_travel_class_fk FOREIGN KEY (travel_class) REFERENCES travel_classes(id) ON DELETE CASCADE ON UPDATE CASCADE;
+    ADD CONSTRAINT aircraft_seating_travel_class_fk FOREIGN KEY (travel_class_id) REFERENCES travel_classes(id) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE aircrew
     ADD CONSTRAINT aircrew_flight_id_fk FOREIGN KEY (flight_id) REFERENCES flights(id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -209,6 +223,8 @@ ALTER TABLE flight_status_history
     ADD CONSTRAINT flight_status_history_status_fk FOREIGN KEY (status_id) REFERENCES statuses(id) ON DELETE CASCADE ON UPDATE CASCADE,
     ADD CONSTRAINT flight_status_history_changed_by_fk FOREIGN KEY (changed_by) REFERENCES employees(id) ON DELETE CASCADE ON UPDATE CASCADE;
 
-ALTER TABLE flight_connections
-    ADD CONSTRAINT flight_connections_flight_order_unique UNIQUE (flight_id, connection_order),
-    ADD CONSTRAINT flight_connections_flight_fk FOREIGN KEY (flight_id) REFERENCES flights(id) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE statuses
+    ADD CONSTRAINT statuses_scope_fk FOREIGN KEY (scope_id) REFERENCES statuses_scope(id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE airplanes
+    ADD CONSTRAINT airplanes_aircraft_fk FOREIGN KEY (aircraft_id) REFERENCES aircraft(id) ON DELETE CASCADE ON UPDATE CASCADE;

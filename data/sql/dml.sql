@@ -16,7 +16,7 @@ CREATE TEMP TABLE temp_airports (
                                     longitude TEXT,
                                     altitude TEXT,
                                     timezone TEXT,
-                                    dst TEXT,
+                                    dstOffset TEXT,
                                     tz TEXT,
                                     type TEXT,
                                     source TEXT
@@ -45,19 +45,15 @@ COPY temp_airports
     FROM 'D:\Users\ezemg\Repositories\airlines\data\datasets\airports.csv'
     DELIMITER ','
     CSV HEADER
-    ENCODING 'LATIN1';
+    ENCODING 'WIN1252';
 
 COPY temp_airlines
     FROM 'D:\Users\ezemg\Repositories\airlines\data\datasets\airline.csv'
     DELIMITER ','
     CSV HEADER
-    ENCODING 'LATIN1';
+    ENCODING 'UTF8';
 
 -- Insert data from the tables
-INSERT INTO statuses (name)
-SELECT DISTINCT temp_airlines.flight_status
-FROM temp_airlines;
-
 INSERT INTO continents (name, code)
 SELECT DISTINCT lines.continents, lines.airport_continent
 FROM temp_airlines lines;
@@ -71,10 +67,10 @@ WHERE temp_airlines.country_name IS NOT NULL
   AND temp_airlines.airport_continent IS NOT NULL
 ON CONFLICT (name, code) DO NOTHING;
 
-INSERT INTO dst (name)
-SELECT DISTINCT ports.dst
+INSERT INTO dst_offset (name)
+SELECT DISTINCT ports.dstOffset
 FROM temp_airports ports
-WHERE ports.dst != '\N';
+WHERE ports.dstOffset != '\N';
 
 INSERT INTO genders (name)
 SELECT DISTINCT temp_airlines.gender
@@ -88,27 +84,22 @@ FROM temp_airports ports
 WHERE ports.city IS NOT NULL
   AND ports.country IS NOT NULL
   AND ports.city != '\N'
-  AND c.id IS NOT NULL
 ON CONFLICT (name, country_id) DO NOTHING;
 
-
-
-INSERT INTO airports (name, city_id, iata, icao, latitude, longitude, altitude, utc, dst_id, timezone)
+INSERT INTO airports (name, city_id, iata, icao, latitude, longitude, altitude, utc, dst_offset_id, timezone)
 SELECT DISTINCT ON (ports.icao, cities.id)
     ports.name, cities.id,
     NULLIF(ports.iata, '\N'), NULLIF(ports.icao, '\N'),
     ports.latitude::REAL, ports.longitude::REAL,
     ports.altitude::REAL,
-    NULLIF(ports.timezone, '\N')::REAL, dst.id,
+    NULLIF(ports.timezone, '\N')::REAL, dst_offset.id,
     NULLIF(ports.tz, '\N')
 FROM temp_airports ports
          JOIN cities ON ports.city = cities.name
-         JOIN dst ON ports.dst = dst.name
+         JOIN dst_offset ON ports.dstOffset = dst_offset.name
 WHERE ports.icao IS NOT NULL
-  AND cities.id IS NOT NULL
   AND ports.city != '\N'
 ON CONFLICT DO NOTHING;
-
 
 INSERT INTO passengers (first_name, last_name, gender_id, birth_date, country_id)
 SELECT DISTINCT NULLIF(temp_airlines.first_name, '\N'), NULLIF(temp_airlines.last_name, '\N'), genders.id, (SELECT CURRENT_DATE - INTERVAL '1 year' * temp_airlines.age), countries.id
@@ -121,26 +112,81 @@ WHERE temp_airlines.first_name IS NOT NULL
 DROP TABLE temp_airports;
 DROP TABLE temp_airlines;
 
-
 -- Hardcoded data
 INSERT INTO manufacturers (name) VALUES ('Boeing'), ('Airbus'), ('Embraer');
 
-INSERT INTO aircraft (name, length_mm, wingspan_mm, max_speed_kmh, range_km, manufacturer_id, tail_number) VALUES
-                                                                                                               ('737 MAX 9A', 42160, 35900, 839, 6110, 1, 'LV-FUA'),
-                                                                                                               ('737 MAX 9B', 39520, 35900, 839, 6480, 1, 'LV-FUB'),
-                                                                                                               ('737 MAX 8', 39520, 35920, 842, 6570, 1, 'LV-FUC'),
-                                                                                                               ('737-800', 39500, 35800, 842, 5765, 1, 'LV-FUD'),
-                                                                                                               ('737-700', 33600, 35800, 842, 6370, 1, 'LV-FUE'),
-                                                                                                               ('A330-200', 58820, 60300, 871, 13450, 2, 'LV-FUF'),
-                                                                                                               ('A350', 66800, 64750, 945, 15000, 2, 'LV-FUG'),
-                                                                                                               ('A330-300', 63660, 60300, 871, 11750, 2, 'LV-FUH'),
-                                                                                                               ('A321', 44510, 35800, 876, 5950, 2, 'LV-FUI'),
-                                                                                                               ('E-190', 36240, 28720, 870, 4537, 3, 'LV-FUJ'),
-                                                                                                               ('ERJ-175', 31680, 28650, 829, 3704, 3, 'LV-FUK'),
-                                                                                                               ('E-195', 41500, 35100, 870, 4815, 3, 'LV-FUL');
+INSERT INTO aircraft (
+    name,
+    length_mm,
+    wingspan_mm,
+    max_speed_kmh,
+    range_km,
+    manufacturer_id,
+    weight_kg,
+    height_m,
+    cruise_speed_kmh,
+    max_fuel_capacity_l
+) VALUES
+      ('737 MAX 9A', 42160, 35900, 839, 6110, 1, 41400, 12.3, 830, 20891),
+      ('737 MAX 9B', 39520, 35900, 839, 6480, 1, 41200, 12.3, 830, 20891),
+      ('737 MAX 8', 39520, 35920, 842, 6570, 1, 41100, 12.3, 828, 20891),
+      ('737-800', 39500, 35800, 842, 5765, 1, 41000, 12.5, 828, 20891),
+      ('737-700', 33600, 35800, 842, 6370, 1, 33300, 12.5, 828, 20891),
+      ('A330-200', 58820, 60300, 871, 13450, 2, 120000, 16.8, 871, 139090),
+      ('A350', 66800, 64750, 945, 15000, 2, 130000, 17.1, 945, 141200),
+      ('A330-300', 63660, 60300, 871, 11750, 2, 122000, 16.8, 871, 139090),
+      ('A321', 44510, 35800, 876, 5950, 2, 46000, 11.8, 840, 23857),
+      ('E-190', 36240, 28720, 870, 4537, 3, 28000, 10.6, 870, 12970),
+      ('ERJ-175', 31680, 28650, 829, 3704, 3, 22000, 9.9, 820, 11000),
+      ('E-195', 41500, 35100, 870, 4815, 3, 29000, 10.6, 870, 12970);
+
+
 
 INSERT INTO travel_classes (name) VALUES ('Economy'), ('Business'), ('First'), ('Premium Economy');
 
 DELETE
 FROM airports a
 WHERE a.name LIKE '%Duplicate%';
+
+INSERT INTO statuses_scope (name) VALUES ('Flight');
+
+INSERT INTO statuses (name, scope_id, description) VALUES
+                                                       ('Scheduled', 1, 'The flight is scheduled to depart on the specified date and time.'),
+                                                       ('Boarding', 1, 'Passengers are currently boarding the aircraft.'),
+                                                       ('Closed', 1, 'The flight has closed its doors and is ready for departure.'),
+                                                       ('Rescheduled', 1, 'The flight has been rescheduled to a different date and time.'),
+                                                       ('Canceled', 1, 'The flight has been canceled and will not depart.'),
+                                                       ('Completed', 1, 'The flight has reached its final destination and is considered finished.'),
+                                                       ('TakingOff', 1, 'The flight is on the runway and in the process of taking off.'),
+                                                       ('InAir', 1, 'The flight is currently airborne and en route to its destination.'),
+                                                       ('Landed', 1, 'The flight has successfully landed at its destination airport.'),
+                                                       ('InZone', 1, 'The flight is in the holding area or approach zone before landing.');
+
+-- Random data
+-- Functions
+CREATE OR REPLACE FUNCTION generate_unique_registration() RETURNS VARCHAR AS $$
+DECLARE
+    reg_number VARCHAR(20);
+BEGIN
+    LOOP
+        reg_number := 'N' || (random() * 99999 + 10000)::int;
+        EXIT WHEN NOT EXISTS (SELECT 1 FROM airplanes WHERE registration_number = reg_number);
+    END LOOP;
+    RETURN reg_number;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Insertions
+DO $$
+    BEGIN
+        FOR i IN 1..531 LOOP
+                INSERT INTO airplanes (aircraft_id, registration_number, in_service, purchase_date)
+                VALUES (
+                           (random() * 11 + 1)::int,
+                           generate_unique_registration(),
+                           (random() > 0.5),
+                           date '2017-01-01' + (random() * (current_date - date '2017-01-01'))::int
+                       );
+            END LOOP;
+    END;
+$$;
