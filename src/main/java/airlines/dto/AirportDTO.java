@@ -38,7 +38,7 @@ public class AirportDTO {
 
     Double utc;
 
-    DstDTO dst;
+    DstOffsetDTO dst;
 
     String timezone;
 }

@@ -4,7 +4,6 @@ import airlines.dto.AircraftDTO;
 import airlines.dto.mapper.IAircraftMapper;
 import airlines.exceptions.notfounds.AircraftNotFoundException;
 import airlines.exceptions.PageNotFoundException;
-import airlines.exceptions.duplicates.DuplicateAircraftException;
 import airlines.model.Aircraft;
 import airlines.repository.IAircraftRepository;
 import airlines.services.interfaces.IAircraftService;
@@ -43,7 +42,6 @@ public class AircraftServiceImpl implements IAircraftService {
 
     @Override @Transactional
     public AircraftDTO save(AircraftDTO aircraftDTO) {
-        validateUniqueAircraft(null, aircraftDTO.getTailNumber());
         aircraftDTO.setManufacturer(manufacturerService.findById(aircraftDTO.getManufacturer().getId()));
         return aircraftMapper.toDTO(aircraftRepository.save(aircraftMapper.toEntity(aircraftDTO)));
     }
@@ -51,7 +49,6 @@ public class AircraftServiceImpl implements IAircraftService {
     @Override @Transactional
     public AircraftDTO update(Integer id, AircraftDTO updatedAircraft) {
         Aircraft aircraft = aircraftMapper.toEntity(findById(id));
-        validateUniqueAircraft(id, updatedAircraft.getTailNumber());
         updatedAircraft.setManufacturer(manufacturerService.findById(updatedAircraft.getManufacturer().getId()));
         aircraftMapper.updateEntityFromDTO(updatedAircraft, aircraft);
         return aircraftMapper.toDTO(aircraftRepository.save(aircraft));
@@ -63,14 +60,4 @@ public class AircraftServiceImpl implements IAircraftService {
         aircraftRepository.deleteById(id);
     }
 
-    /**
-     * Validates if the aircraft is unique by tail number
-     * @param id aircraft id (null if new aircraft)
-     * @param tailNumber aircraft data
-     */
-    private void validateUniqueAircraft(Integer id, String tailNumber) {
-        if (aircraftRepository.existsAircraftByTailNumberAndIdNot(tailNumber, id)) {
-            throw new DuplicateAircraftException("Aircraft with tail number " + tailNumber + " already exists");
-        }
-    }
 }

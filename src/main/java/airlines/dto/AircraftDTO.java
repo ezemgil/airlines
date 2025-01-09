@@ -1,7 +1,6 @@
 package airlines.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -28,9 +27,17 @@ public class AircraftDTO {
     @Positive(message = "Range must be positive")
     Integer rangeKm;
 
-    @NotBlank(message = "Tail number is mandatory")
-    @Pattern(regexp = "^[A-Z]{2}-[A-Z0-9]{3,4}$", message = "Tail number must be in the format XX-XXXX")
-    String tailNumber;
-
     ManufacturerDTO manufacturer;
+
+    @Positive(message = "Weight must be positive")
+    Integer weightKg;
+
+    @Positive(message = "Height must be positive")
+    Integer heightM;
+
+    @Positive(message = "Cruise speed must be positive")
+    Integer cruiseSpeedKmh;
+
+    @Positive(message = "Fuel capacity must be positive")
+    Integer fuelCapacityL;
 }

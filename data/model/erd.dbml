@@ -48,7 +48,7 @@ Table airports {
     longitude REAL [not null]
     altitude REAL [not null]
     utc REAL
-    dst_id SMALLINT [ref: > dst.id, on delete: cascade, on update: cascade]
+    dst_id SMALLINT [ref: > dstOffset.id, on delete: cascade, on update: cascade]
     timezone_id INTEGER [ref: > timezones.id, on delete: cascade, on update: cascade]
     indexes {
         (iata, icao) [unique]
@@ -57,7 +57,7 @@ Table airports {
     Note: "CHECK (longitude BETWEEN -180 AND 180)"
 }
 
-Table dst {
+Table dstOffset {
     id SMALLSERIAL [pk]
     name CHAR(1) [unique, not null]
     Note: "CHECK (name IN ('E', 'A', 'S', 'O', 'Z', 'N', 'U'))"

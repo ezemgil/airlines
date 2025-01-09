@@ -9,7 +9,7 @@ import airlines.model.Airport;
 import airlines.repository.IAirportRepository;
 import airlines.services.interfaces.IAirportService;
 import airlines.services.interfaces.ICityService;
-import airlines.services.interfaces.IDstService;
+import airlines.services.interfaces.IDstOffsetService;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -17,13 +17,15 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @AllArgsConstructor
 public class AirportServiceImpl implements IAirportService {
     private final IAirportRepository airportRepository;
     private final IAirportMapper airportMapper;
 
-    private final IDstService dstService;
+    private final IDstOffsetService dstService;
     private final ICityService cityService;
 
 
@@ -76,6 +78,22 @@ public class AirportServiceImpl implements IAirportService {
         airportRepository.deleteById(id);
     }
 
+    @Override
+    public List<AirportDTO> getAirportsWithinRadius(AirportDTO origin, Double radius) {
+        List<AirportDTO> airports = airportRepository.findAll().stream()
+                .filter(airport -> !airport.getId().equals(origin.getId()))
+                .filter(airport -> calculateDistance(origin.getLatitude(), origin.getLongitude(),
+                        airport.getLatitude(), airport.getLongitude()) <= radius)
+                .map(airportMapper::toDTO)
+                .toList();
+
+        if (airports.isEmpty()) {
+            throw new AirportNotFoundException("No airports found within the given radius");
+        }
+
+        return airports;
+    }
+
     /**
         * Validates if the airport with the given IATA or ICAO code already exists in the database.
         * @param iata the IATA code of the airport
@@ -91,5 +109,34 @@ public class AirportServiceImpl implements IAirportService {
         if (airportRepository.existsByIcao(iata)) {
             throw new DuplicateAirportException("Airport with ICAO " + icao);
         }
+    }
+
+    /**
+     * Calculates the distance between two points on the Earth's surface using the Haversine formula.
+     * The Earth is assumed to be a perfect sphere with a radius of 6378.137 kilometers.
+     * @param lat1 the latitude of the first point
+     * @param lon1 the longitude of the first point
+     * @param lat2 the latitude of the second point
+     * @param lon2 the longitude of the second point
+     * @return the distance between the two points in kilometers
+     */
+    private static Double calculateDistance(Double lat1, Double lon1, Double lat2, Double lon2) {
+        double earthRadius = 6378.137;
+
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+
+        double sinLat = Math.sin(dLat / 2);
+        double sinLon = Math.sin(dLon / 2);
+
+        double haversineFormula =
+                sinLat * sinLat + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) * sinLon * sinLon;
+        double centralAngle = 2 * Math.sin(Math.min(1.0, Math.sqrt(haversineFormula)));
+
+        return earthRadius * centralAngle;
+    }
+
+    public List<AirportDTO> getReachableAirports(AirportDTO origin) {
+        return null;
     }
 }

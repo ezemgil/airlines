@@ -49,8 +49,8 @@ public class Airport {
     Double utc;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
-    @JoinColumn(name = "dst_id", nullable = false)
-    Dst dst;
+    @JoinColumn(name = "dst_offset_id", nullable = false)
+    DstOffset dstOffset;
 
     @Column(name = "timezone", nullable = false)
     String timezone;
