@@ -34,8 +34,8 @@ public class Flight {
     LocalDateTime scheduledDateTime;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
-    @JoinColumn(name = "aircraft_id", nullable = false)
-    Aircraft aircraft;
+    @JoinColumn(name = "airplane_id", nullable = false)
+    Airplane airplane;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
     @JoinColumn(name = "origin", nullable = false)

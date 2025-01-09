@@ -22,7 +22,7 @@ public class FlightServiceImpl implements IFlightService {
     /**
      * 1: Ask for departure date and time.
      * 2: Ask for the origin airport.
-     * 3: Find, for the origin airport and the given departure date and time, all the aircrafts that are not in use
+     * 3: Find, for the origin airport and the given departure date and time, all the airplanes that are not in use
      * and have no scheduled flights.
      * 4: For the given aircraft and the origin airport, find all the possible destinations.
      * 5: Ask for the destination airport.

@@ -21,7 +21,7 @@ public class FlightDTO {
     @NotBlank(message = "Scheduled date time is mandatory")
     String scheduledDateTime;
 
-    AircraftDTO aircraft;
+    AirplaneDTO airplaneDTO;
 
     AirportDTO originAirport;
 
